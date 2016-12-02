@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Testing.Abstractions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Shibbolizer.Tests
@@ -47,11 +49,7 @@ namespace Shibbolizer.Tests
         [Fact]
         public async void SucceedsWhenHasUsername()
         {
-            var request = _testServer.CreateRequest("/")
-                .AddHeader("userID", "jlost")
-                .AddHeader("email", "jlost@company.com")
-                .AddHeader("groups", "GreatPeople;Illuminati;Company Unit;SMORES_Steering_Committee")
-                .AddHeader("roles", "superUsers,managers, space men");
+            var request = GetHappyTestRequest();
 
             var response = await request.GetAsync();
             
@@ -65,47 +63,75 @@ namespace Shibbolizer.Tests
         [Fact]
         public async void GetsSpecifiedClaims()
         {
-            var request = _testServer.CreateRequest("/")
+            var request = GetHappyTestRequest();
+
+            var response = await request.GetAsync();
+
+            var claims = response.Headers
+                .Single(h => h.Key == "claims").Value
+                .Select(JsonConvert.DeserializeObject<ClaimTestInfo>);
+                
+            var claimsValues = claims.Select(cti => cti.Value);
+
+            Assert.Contains("GreatPeople", claimsValues);
+            Assert.Contains("Company Unit", claimsValues);
+            Assert.Contains("superUsers", claimsValues);
+            Assert.Contains(" space men", claimsValues);
+
+            Assert.Equal(claims.First(cti => cti.Value == "superUsers").Type, "roles");
+            Assert.Equal(claims.First(cti => cti.Value == "GreatPeople").Type, "groups");
+            
+            Assert.Equal(claims.First().Issuer, "ShibbolizerIssuer");
+        }
+
+        private RequestBuilder GetHappyTestRequest()
+        {
+            return _testServer.CreateRequest("/")
                 .AddHeader("userID", "jlost")
                 .AddHeader("email", "jlost@company.com")
                 .AddHeader("groups", "GreatPeople;Illuminati;Company Unit;SMORES_Steering_Committee")
                 .AddHeader("roles", "superUsers,managers, space men");
-
-            var response = await request.GetAsync();
-
-            var claims = response.Headers.Single(h => h.Key == "claims").Value;
-            Assert.Contains("GreatPeople", claims);
-            Assert.Contains("Company Unit", claims);
-            Assert.Contains("superUsers", claims);
-            Assert.Contains(" space men", claims);
         }
 
+        private class ClaimTestInfo
+        {
+            public string Issuer { get; set; }
+            public string OriginalIssuer { get; set; }
+            public string Type { get; set; }
+            public string Value { get; set; }
+            public string ValueType { get; set; }
+        }
+       
         private class TestStartup
         {
+            protected ShibbolizerOptions _shibbolizerOptions;
+
             public TestStartup(IHostingEnvironment env)
             {
+                _shibbolizerOptions = new ShibbolizerOptions
+                {
+                    UsernameHeader = "userID",
+                    ClaimHeaders = new[] {"email", "employeeType"},
+                    MultiClaimHeaders = new[]
+                    {
+                        new MultiClaimHeader {Header = "groups", Parser = s => s.Split(';')},
+                        new MultiClaimHeader {Header = "roles", Parser = s => s.Split(',')}
+                    },
+                    AutomaticAuthenticate = true,
+                    AuthenticationScheme = "Shibbolizer",
+                    AutomaticChallenge = true,
+                    ClaimsIssuer = "ShibbolizerIssuer"
+                };
             }
             
             public void ConfigureServices(IServiceCollection services)
             {
                 services.AddAuthentication();
             }
-
+            
             public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
             {
-                app.UseShibbolizerAuthentication(new ShibbolizerOptions
-                {
-                    UsernameHeader = "userID",
-                    ClaimHeaders = new [] { "email", "employeeType" },
-                    MultiClaimHeaders = new []
-                    {
-                        new MultiClaimHeader { Header = "groups", Parser = s => s.Split(';') },
-                        new MultiClaimHeader { Header = "roles", Parser = s => s.Split(',') }
-                    },
-                    AutomaticAuthenticate = true,
-                    AuthenticationScheme = "Shibbolizer",
-                    AutomaticChallenge = true,
-                });
+                app.UseShibbolizerAuthentication(_shibbolizerOptions);
                 app.Use(next =>
                 {
                     return async ctx =>
@@ -116,7 +142,17 @@ namespace Shibbolizer.Tests
                                 : 401;
                         ctx.Response.Headers.Add("user", ctx.User.Identity.Name);
                         ctx.Response.Headers.Add("isAuthenticated", ctx.User.Identity.IsAuthenticated.ToString());
-                        ctx.Response.Headers.Add("claims", ctx.User.Claims.Select(c => c.Value).ToArray());
+                        ctx.Response.Headers.Add("claims",
+                            ctx.User.Claims.Select(c => new ClaimTestInfo
+                            {
+                                Issuer = c.Issuer,
+                                OriginalIssuer = c.OriginalIssuer,
+                                Type = c.Type,
+                                Value = c.Value,
+                                ValueType = c.ValueType
+                            })
+                            .Select(JsonConvert.SerializeObject).ToArray()
+                        );
                         await ctx.Response.WriteAsync("");
                         await next(ctx);
                     };
@@ -124,46 +160,23 @@ namespace Shibbolizer.Tests
             }
         }
 
-        private class TestStartupNoUsernameHeaderConfigured
+        private class TestStartupNoUsernameHeaderConfigured : TestStartup
         {
-            public TestStartupNoUsernameHeaderConfigured(IHostingEnvironment env)
+            public TestStartupNoUsernameHeaderConfigured(IHostingEnvironment env) : base(env)
             {
-            }
-
-            public void ConfigureServices(IServiceCollection services)
-            {
-                services.AddAuthentication();
-            }
-
-            public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
-            {
-                app.UseShibbolizerAuthentication(new ShibbolizerOptions
+                _shibbolizerOptions = new ShibbolizerOptions
                 {
-                    ClaimHeaders = new[] { "email", "employeeType" },
+                    ClaimHeaders = new[] {"email", "employeeType"},
                     MultiClaimHeaders = new[]
                     {
-                        new MultiClaimHeader { Header = "groups", Parser = s => s.Split(';') },
-                        new MultiClaimHeader { Header = "roles", Parser = s => s.Split(',') }
+                        new MultiClaimHeader {Header = "groups", Parser = s => s.Split(';')},
+                        new MultiClaimHeader {Header = "roles", Parser = s => s.Split(',')}
                     },
                     AutomaticAuthenticate = true,
                     AuthenticationScheme = "Shibbolizer",
                     AutomaticChallenge = true,
-                });
-                app.Use(next =>
-                {
-                    return async ctx =>
-                    {
-                        ctx.Response.StatusCode = 
-                            ctx.User.Identity.IsAuthenticated 
-                                ? 200 
-                                : 401;
-                        ctx.Response.Headers.Add("user", ctx.User.Identity.Name);
-                        ctx.Response.Headers.Add("isAuthenticated", ctx.User.Identity.IsAuthenticated.ToString());
-                        ctx.Response.Headers.Add("claims", ctx.User.Claims.Select(c => c.Value).ToArray());
-                        await ctx.Response.WriteAsync("");
-                        await next(ctx);
-                    };
-                });
+                    ClaimsIssuer = "ShibbolizerIssuer"
+                };
             }
         }
     }
