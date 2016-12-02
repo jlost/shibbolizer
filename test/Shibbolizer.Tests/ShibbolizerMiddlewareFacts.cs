@@ -34,8 +34,8 @@ namespace Shibbolizer.Tests
 
             var response = await request.GetAsync();
 
-            Assert.Equal((int)response.StatusCode, 500);
-            }
+            Assert.Equal(500, (int)response.StatusCode);
+        }
 
         [Fact]
         public async void FailsWhenNoUsername()
@@ -48,10 +48,10 @@ namespace Shibbolizer.Tests
 
             var response = await request.GetAsync();
 
-            Assert.Equal((int)response.StatusCode, 401);
+            Assert.Equal(401, (int)response.StatusCode);
             Assert.Equal(
-                response.Headers.Single(h => h.Key == "isAuthenticated").Value.Single(),
-                false.ToString()
+                false.ToString(),
+                response.Headers.Single(h => h.Key == "isAuthenticated").Value.Single()
             );
         }
 
@@ -66,10 +66,10 @@ namespace Shibbolizer.Tests
 
             var response = await request.GetAsync();
             
-            Assert.Equal((int)response.StatusCode, 200);
+            Assert.Equal(200, (int)response.StatusCode);
             Assert.Equal(
-                response.Headers.Single(h => h.Key == "isAuthenticated").Value.Single(), 
-                true.ToString()
+                true.ToString(),
+                response.Headers.Single(h => h.Key == "isAuthenticated").Value.Single()
             );
         }
 
@@ -99,6 +99,7 @@ namespace Shibbolizer.Tests
             
             public void ConfigureServices(IServiceCollection services)
             {
+                services.AddAuthentication();
             }
 
             public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
@@ -135,6 +136,7 @@ namespace Shibbolizer.Tests
 
             public void ConfigureServices(IServiceCollection services)
             {
+                services.AddAuthentication();
             }
 
             public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
