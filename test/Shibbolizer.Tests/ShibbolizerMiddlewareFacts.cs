@@ -110,7 +110,10 @@ namespace Shibbolizer.Tests
                 {
                     return async ctx =>
                     {
-                        ctx.Response.StatusCode = 200;
+                        ctx.Response.StatusCode =
+                            ctx.User.Identity.IsAuthenticated
+                                ? 200
+                                : 401;
                         ctx.Response.Headers.Add("user", ctx.User.Identity.Name);
                         ctx.Response.Headers.Add("isAuthenticated", ctx.User.Identity.IsAuthenticated.ToString());
                         ctx.Response.Headers.Add("claims", ctx.User.Claims.Select(c => c.Value).ToArray());
@@ -150,10 +153,14 @@ namespace Shibbolizer.Tests
                 {
                     return async ctx =>
                     {
-                        ctx.Response.StatusCode = 200;
+                        ctx.Response.StatusCode = 
+                            ctx.User.Identity.IsAuthenticated 
+                                ? 200 
+                                : 401;
                         ctx.Response.Headers.Add("user", ctx.User.Identity.Name);
                         ctx.Response.Headers.Add("isAuthenticated", ctx.User.Identity.IsAuthenticated.ToString());
                         ctx.Response.Headers.Add("claims", ctx.User.Claims.Select(c => c.Value).ToArray());
+                        await ctx.Response.WriteAsync("");
                         await next(ctx);
                     };
                 });
