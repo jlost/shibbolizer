@@ -23,6 +23,8 @@ namespace Shibbolizer
                 throw new ArgumentNullException(nameof(app));
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
+            if (string.IsNullOrWhiteSpace(options.UsernameHeader))
+                throw new ArgumentNullException(nameof(options.UsernameHeader));
 
             return app.UseMiddleware<ShibbolizerMiddleware>(Options.Create(options));
         }

@@ -23,18 +23,12 @@ namespace Shibbolizer.Tests
         }
 
         [Fact]
-        public async void FailsWhenNoUsernameHeaderConfigured()
+        public void FailsWhenNoUsernameHeaderConfigured()
         {
-            var testServer = new TestServer(new WebHostBuilder().UseStartup<TestStartupNoUsernameHeaderConfigured>());
-            var request = testServer.CreateRequest("/")
-                .AddHeader("userID", "jlost")
-                .AddHeader("email", "jlost@company.com")
-                .AddHeader("groups", "GreatPeople;Illuminati;Company Unit;SMORES_Steering_Committee")
-                .AddHeader("roles", "superUsers,managers, space men");
-
-            var response = await request.GetAsync();
-
-            Assert.Equal(500, (int)response.StatusCode);
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                new TestServer(new WebHostBuilder().UseStartup<TestStartupNoUsernameHeaderConfigured>());
+            });
         }
 
         [Fact]
@@ -47,12 +41,7 @@ namespace Shibbolizer.Tests
                 .AddHeader("roles", "superUsers,managers, space men");
 
             var response = await request.GetAsync();
-
             Assert.Equal(401, (int)response.StatusCode);
-            Assert.Equal(
-                false.ToString(),
-                response.Headers.Single(h => h.Key == "isAuthenticated").Value.Single()
-            );
         }
 
         [Fact]
@@ -112,7 +101,10 @@ namespace Shibbolizer.Tests
                     {
                         new MultiClaimHeader { Header = "groups", Parser = s => s.Split(';') },
                         new MultiClaimHeader { Header = "roles", Parser = s => s.Split(',') }
-                    }
+                    },
+                    AutomaticAuthenticate = true,
+                    AuthenticationScheme = "Shibbolizer",
+                    AutomaticChallenge = true,
                 });
                 app.Use(next =>
                 {
@@ -122,6 +114,7 @@ namespace Shibbolizer.Tests
                         ctx.Response.Headers.Add("user", ctx.User.Identity.Name);
                         ctx.Response.Headers.Add("isAuthenticated", ctx.User.Identity.IsAuthenticated.ToString());
                         ctx.Response.Headers.Add("claims", ctx.User.Claims.Select(c => c.Value).ToArray());
+                        await ctx.Response.WriteAsync("");
                         await next(ctx);
                     };
                 });
@@ -148,7 +141,10 @@ namespace Shibbolizer.Tests
                     {
                         new MultiClaimHeader { Header = "groups", Parser = s => s.Split(';') },
                         new MultiClaimHeader { Header = "roles", Parser = s => s.Split(',') }
-                    }
+                    },
+                    AutomaticAuthenticate = true,
+                    AuthenticationScheme = "Shibbolizer",
+                    AutomaticChallenge = true,
                 });
                 app.Use(next =>
                 {

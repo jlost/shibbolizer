@@ -12,9 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Shibbolizer", "src\Shibbolizer\Shibbolizer.xproj", "{E892A020-544C-40E1-B0BE-B41D30358C95}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Shibbolizer.Test", "src\Shibbolizer.Tests\Shibbolizer.Test.xproj", "{C3023FCF-7860-48E1-ACD6-387E504F9F0C}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{CB8E5544-2019-464A-B376-66A9E63C9DAA}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Shibbolizer.Test", "test\Shibbolizer.Tests\Shibbolizer.Test.xproj", "{C3023FCF-7860-48E1-ACD6-387E504F9F0C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
