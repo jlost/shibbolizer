@@ -15,7 +15,8 @@ namespace Shibbolizer
             if (string.IsNullOrWhiteSpace(Options.UsernameHeader))
                 throw new InvalidOperationException($"No {nameof(Options.UsernameHeader)} configured.");
 
-            if (string.IsNullOrWhiteSpace(Request.Headers[Options.UsernameHeader]))
+            var username = Request.Headers[Options.UsernameHeader];
+            if (string.IsNullOrWhiteSpace(username))
                 return AuthenticateResult.Fail($"Username header: {Options.UsernameHeader} does not exist or contains no value.");
 
             var claims = Options.ClaimHeaders
@@ -24,7 +25,10 @@ namespace Shibbolizer
                 .Union(Options.MultiClaimHeaders
                     .Where(mch => Request.Headers.Select(h => h.Key).Contains(mch.Header))
                     .SelectMany(mch => mch.Parser(Request.Headers[mch.Header])
-                        .Select(s => new Claim(mch.Header, s, ClaimValueTypes.String, Options.ClaimsIssuer))));
+                        .Select(s => new Claim(mch.Header, s, ClaimValueTypes.String, Options.ClaimsIssuer))))
+                .ToList();
+
+            claims.Add(new Claim(ClaimTypes.Name, username));
 
             var userIdentity = new ClaimsIdentity(claims, Options.ClaimsIssuer);
 
