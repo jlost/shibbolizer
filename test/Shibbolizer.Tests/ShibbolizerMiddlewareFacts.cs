@@ -61,6 +61,19 @@ namespace Shibbolizer.Tests
         }
 
         [Fact]
+        public async void UsernameIsSetCorrectly()
+        {
+            var request = GetHappyTestRequest();
+
+            var response = await request.GetAsync();
+
+            Assert.Equal(
+                "jlost",
+                response.Headers.Single(h => h.Key == "user").Value.Single()
+            );
+        }
+
+        [Fact]
         public async void GetsSpecifiedClaims()
         {
             var request = GetHappyTestRequest();
