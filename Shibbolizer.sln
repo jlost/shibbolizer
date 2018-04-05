@@ -1,20 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3E45029D-812F-43D1-89CD-1B3E6F2AB27E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{827A3E7A-50DE-4E45-9A77-CE638931CD59}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Shibbolizer", "src\Shibbolizer\Shibbolizer.xproj", "{E892A020-544C-40E1-B0BE-B41D30358C95}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{CB8E5544-2019-464A-B376-66A9E63C9DAA}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Shibbolizer.Test", "test\Shibbolizer.Tests\Shibbolizer.Test.xproj", "{C3023FCF-7860-48E1-ACD6-387E504F9F0C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shibbolizer", "src\Shibbolizer\Shibbolizer.csproj", "{E892A020-544C-40E1-B0BE-B41D30358C95}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shibbolizer.Tests", "test\Shibbolizer.Tests\Shibbolizer.Tests.csproj", "{C3023FCF-7860-48E1-ACD6-387E504F9F0C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,5 +34,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{E892A020-544C-40E1-B0BE-B41D30358C95} = {3E45029D-812F-43D1-89CD-1B3E6F2AB27E}
 		{C3023FCF-7860-48E1-ACD6-387E504F9F0C} = {CB8E5544-2019-464A-B376-66A9E63C9DAA}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F07D760D-3A53-4518-987E-A80EB8542647}
 	EndGlobalSection
 EndGlobal

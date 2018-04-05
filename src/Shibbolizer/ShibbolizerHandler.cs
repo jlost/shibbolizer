@@ -1,15 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http.Authentication;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Shibbolizer
 {
     internal class ShibbolizerHandler : AuthenticationHandler<ShibbolizerOptions>
     {
+
+        public ShibbolizerHandler(
+            IOptionsMonitor<ShibbolizerOptions> options,
+            ILoggerFactory logger,
+            UrlEncoder encoder,
+            ISystemClock clock) : base(options, logger, encoder, clock)
+        {
+        }
+
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (string.IsNullOrWhiteSpace(Options.UsernameHeader))
@@ -32,7 +42,7 @@ namespace Shibbolizer
 
             var userIdentity = new ClaimsIdentity(claims, Options.ClaimsIssuer);
 
-            var ticket = new AuthenticationTicket(new ClaimsPrincipal(userIdentity), new AuthenticationProperties(), Options.AuthenticationScheme);
+            var ticket = new AuthenticationTicket(new ClaimsPrincipal(userIdentity), ShibbolizerDefaults.AuthenticationScheme);
             return AuthenticateResult.Success(ticket);
         }
     }

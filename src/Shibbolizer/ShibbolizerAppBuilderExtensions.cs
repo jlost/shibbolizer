@@ -1,32 +1,35 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Shibbolizer
 {
     public static class ShibbolizerAppBuilderExtensions
     {
-        public static IApplicationBuilder UseShibbolizerAuthentication(this IApplicationBuilder app)
-        {
-            if (app == null)
-                throw new ArgumentNullException(nameof(app));
 
-            return app.UseMiddleware<ShibbolizerMiddleware>();
+        public static AuthenticationBuilder AddShibboleth(this AuthenticationBuilder builder)
+            => builder.AddShibboleth(ShibbolizerDefaults.AuthenticationScheme);
+
+        public static AuthenticationBuilder AddShibboleth(this AuthenticationBuilder builder, string authenticationScheme)
+            => builder.AddShibboleth(authenticationScheme, configureOptions: null);
+
+        public static AuthenticationBuilder AddShibboleth(this AuthenticationBuilder builder, Action<ShibbolizerOptions> configureOptions)
+            => builder.AddShibboleth(ShibbolizerDefaults.AuthenticationScheme, configureOptions);
+
+        public static AuthenticationBuilder AddShibboleth(this AuthenticationBuilder builder, string authenticationScheme, Action<ShibbolizerOptions> configureOptions)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+            if (configureOptions == null)
+                throw new ArgumentNullException(nameof(configureOptions));
+
+            ShibbolizerOptions opts = new ShibbolizerOptions();
+            configureOptions(opts);
+ 
+            if (string.IsNullOrWhiteSpace(opts.UsernameHeader))
+                throw new ArgumentNullException(opts.UsernameHeader);
+
+            return builder.AddScheme<ShibbolizerOptions, ShibbolizerHandler>(authenticationScheme, configureOptions);
         }
 
-        public static IApplicationBuilder UseShibbolizerAuthentication(this IApplicationBuilder app, ShibbolizerOptions options)
-        {
-            if (app == null)
-                throw new ArgumentNullException(nameof(app));
-            if (options == null)
-                throw new ArgumentNullException(nameof(options));
-            if (string.IsNullOrWhiteSpace(options.UsernameHeader))
-                throw new ArgumentNullException(nameof(options.UsernameHeader));
-
-            return app.UseMiddleware<ShibbolizerMiddleware>(Options.Create(options));
-        }
     }
 }
