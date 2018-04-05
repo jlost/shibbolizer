@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Shibbolizer
 {
-    public class ShibbolizerOptions : AuthenticationOptions
+    public class ShibbolizerOptions : AuthenticationSchemeOptions
     {
         public string UsernameHeader { get; set; }
         public IEnumerable<string> ClaimHeaders { get; set; }

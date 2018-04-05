@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Testing.Abstractions;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Shibbolizer.Tests
@@ -91,10 +87,10 @@ namespace Shibbolizer.Tests
             Assert.Contains("superUsers", claimsValues);
             Assert.Contains(" space men", claimsValues);
 
-            Assert.Equal(claims.First(cti => cti.Value == "superUsers").Type, "roles");
-            Assert.Equal(claims.First(cti => cti.Value == "GreatPeople").Type, "groups");
+            Assert.Equal("roles", claims.First(cti => cti.Value == "superUsers").Type);
+            Assert.Equal("groups", claims.First(cti => cti.Value == "GreatPeople").Type);
             
-            Assert.Equal(claims.First().Issuer, "ShibbolizerIssuer");
+            Assert.Equal("ShibbolizerIssuer", claims.First().Issuer);
         }
 
         private RequestBuilder GetHappyTestRequest()
@@ -130,21 +126,28 @@ namespace Shibbolizer.Tests
                         new MultiClaimHeader {Header = "groups", Parser = s => s.Split(';')},
                         new MultiClaimHeader {Header = "roles", Parser = s => s.Split(',')}
                     },
-                    AutomaticAuthenticate = true,
-                    AuthenticationScheme = "Shibbolizer",
-                    AutomaticChallenge = true,
                     ClaimsIssuer = "ShibbolizerIssuer"
                 };
             }
-            
+
             public void ConfigureServices(IServiceCollection services)
             {
-                services.AddAuthentication();
+
+                 services.AddAuthentication( ShibbolizerDefaults.AuthenticationScheme ).AddShibboleth(
+                    (options) =>
+                    {
+                        options.UsernameHeader =_shibbolizerOptions.UsernameHeader;
+                        options.ClaimHeaders = _shibbolizerOptions.ClaimHeaders;
+                        options.MultiClaimHeaders = _shibbolizerOptions.MultiClaimHeaders;
+                        options.ClaimsIssuer = _shibbolizerOptions.ClaimsIssuer;
+                    }
+                 );
             }
             
             public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
             {
-                app.UseShibbolizerAuthentication(_shibbolizerOptions);
+                app.UseAuthentication();
+               
                 app.Use(next =>
                 {
                     return async ctx =>
@@ -185,9 +188,6 @@ namespace Shibbolizer.Tests
                         new MultiClaimHeader {Header = "groups", Parser = s => s.Split(';')},
                         new MultiClaimHeader {Header = "roles", Parser = s => s.Split(',')}
                     },
-                    AutomaticAuthenticate = true,
-                    AuthenticationScheme = "Shibbolizer",
-                    AutomaticChallenge = true,
                     ClaimsIssuer = "ShibbolizerIssuer"
                 };
             }
